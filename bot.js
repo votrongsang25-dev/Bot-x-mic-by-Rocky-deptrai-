@@ -7,49 +7,57 @@ express().listen(3000);
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildVoiceStates] });
 
-const ID_1 = '1520058521746538609';
-const ID_2 = '1398280041271525488';
+const distube = new DisTube(client, { 
+    plugins: [new YtDlpPlugin()],
+    leaveOnEmpty: false,
+    leaveOnStop: false,
+    leaveOnFinish: false 
+});
 
-const distube = new DisTube(client, { plugins: [new YtDlpPlugin()], emitNewSongOnly: true });
+// Sự kiện playSong: Mặc định bật âm lượng to
+distube.on('playSong', (queue, song) => {
+    queue.setVolume(200);
+    queue.filters.add(['volume=50', 'bassboost']);
+});
 
 client.on('messageCreate', async (m) => {
-    if (m.author.bot || (m.author.id !== ID_1 && m.author.id !== ID_2)) return;
+    if (m.author.bot) return;
 
-    if (m.content === '!menu') {
-        m.reply('📜 Lệnh:\n!batnhac [tên]\n!xamic\n!dungnhac');
-    }
-
+    // Lệnh phát nhạc thông thường (Tắt loop)
     if (m.content.startsWith('!batnhac ')) {
         const q = m.content.slice(9);
-        if (!m.member.voice.channel) return m.reply('Vào voice đi!');
+        if (!m.member.voice.channel) return m.reply('❌ Vào voice trước!');
+        distube.setRepeatMode(m, 0); // Tắt loop
         distube.play(m.member.voice.channel, q, { message: m });
     }
 
-    if (m.content === '!dungnhac') {
-        distube.stop(m);
-        m.reply('⏹️ Đã dừng.');
+    // Lệnh gọi bảng xả mic
+    if (m.content === '!xamic') {
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('URL_1').setLabel('Còi CS').setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId('URL_2').setLabel('Chửi Khủng Bố').setStyle(ButtonStyle.Danger),
+            new ButtonBuilder().setCustomId('URL_3').setLabel('Tung Tung').setStyle(ButtonStyle.Primary)
+        );
+        m.reply({ content: '🎙️ Chọn file (Tự động lặp):', components: [row] });
     }
 
-    if (m.content === '!xamic') {
-        const r = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('URL_1').setLabel('Còi CS').setStyle(ButtonStyle.Danger),
-            new ButtonBuilder().setCustomId('URL_2').setLabel('Khủng Bố').setStyle(ButtonStyle.Danger),
-            new ButtonBuilder().setCustomId('URL_3').setLabel('Tung Tung').setStyle(ButtonStyle.Danger),
-            new ButtonBuilder().setCustomId('URL_4').setLabel('Duma').setStyle(ButtonStyle.Danger),
-            new ButtonBuilder().setCustomId('URL_5').setLabel('Khác').setStyle(ButtonStyle.Danger)
-        );
-        m.reply({ content: '🎙️ Chọn file:', components: [r] });
-    }
+    if (m.content === '!dungnhac') distube.stop(m);
 });
 
 client.on('interactionCreate', async (i) => {
     if (!i.isButton()) return;
-    // Bỏ deferReply để phản hồi ngay lập tức cho bot đỡ bị treo
-    if (!i.member.voice.channel) return i.reply({ content: 'Vào voice trước!', ephemeral: true });
-    
-    // Tăng âm lượng cưỡng bức
+    if (!i.member.voice.channel) return i.reply({ content: '❌ Vào voice trước!', ephemeral: true });
+
+    // Phát file và BẬT LOOP cho xả mic
     distube.play(i.member.voice.channel, i.customId, { textChannel: i.channel });
-    i.reply({ content: '🔊 Đang xả mic cực đại...', ephemeral: true });
+    
+    // Đợi 1 chút để queue khởi tạo rồi bật loop
+    setTimeout(() => {
+        const queue = distube.getQueue(i);
+        if (queue) queue.setRepeatMode(1); // Chỉ bật loop cho file xả mic
+    }, 1000);
+
+    i.reply({ content: '🔊 Đang xả mic & đã bật Loop...', ephemeral: true });
 });
 
 client.login(process.env.DISCORD_TOKEN);
