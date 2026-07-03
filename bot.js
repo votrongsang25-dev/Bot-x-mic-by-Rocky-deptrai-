@@ -3,8 +3,7 @@ const { DisTube } = require('distube');
 const { YtDlpPlugin } = require('@distube/yt-dlp');
 const express = require('express');
 
-const app = express();
-app.listen(3000);
+express().listen(3000);
 
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildVoiceStates]
@@ -15,29 +14,23 @@ const ID_2 = '1398280041271525488';
 
 const distube = new DisTube(client, { plugins: [new YtDlpPlugin()], emitNewSongOnly: true });
 
-client.on('messageCreate', async (message) => {
-    if (message.author.id !== ID_1 && message.author.id !== ID_2) return;
-
-    if (message.content === '!menu') {
-        const embed = new EmbedBuilder()
-            .setTitle('═══ ĐIỀU KHIỂN ═══')
-            .setColor(0xFF0000)
-            .setDescription('```fix\nCHỌN LỆNH BÊN DƯỚI\n```');
-
-        const row = new ActionRowBuilder().addComponents(
+client.on('messageCreate', async (m) => {
+    if (m.author.id !== ID_1 && m.author.id !== ID_2) return;
+    if (m.content === '!menu') {
+        const e = new EmbedBuilder().setTitle('═══ ĐIỀU KHIỂN ═══').setColor(0xFF0000).setDescription('```fix\nCHỌN LỆNH\n```');
+        const r = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('bass').setLabel('BẬT BASS').setStyle(ButtonStyle.Success),
             new ButtonBuilder().setCustomId('stop').setLabel('DỪNG NHẠC').setStyle(ButtonStyle.Danger)
         );
-
-        message.reply({ embeds: [embed], components: [row] });
+        m.reply({ embeds: [e], components: [r] });
     }
 });
 
-client.on('interactionCreate', async interaction => {
-    if (!interaction.isButton()) return;
-    if (interaction.customId === 'bass') {
-        distube.setFilter(interaction, "bassboost");
-        await interaction.reply({ content: '
+client.on('interactionCreate', async (i) => {
+    if (!i.isButton()) return;
+    if (i.customId === 'bass') {
+        distube.setFilter(i, "bassboost");
+        await i.reply({ content: '
 http://googleusercontent.com/immersive_entry_chip/0
 http://googleusercontent.com/immersive_entry_chip/1
         
