@@ -10,9 +10,8 @@ const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildVoiceStates]
 });
 
-// Chia ra 2 phần ID rõ ràng
-const ID_ACC_1 = '1398280041271525488';
-const ID_ACC_2 = '1520058521746538609';
+const ID_ACC_1 = '1520058521746538609';
+const ID_ACC_2 = '1398280041271525488';
 
 const distube = new DisTube(client, {
     plugins: [new YtDlpPlugin()],
@@ -20,10 +19,14 @@ const distube = new DisTube(client, {
 });
 
 client.on('messageCreate', async (message) => {
-    // Chỉ cho phép ID 1 HOẶC ID 2 dùng lệnh
-    if (message.author.id !== ID_ACC_1 && message.author.id !== ID_ACC_2) return;
+    if (message.author.id !== ID_ACC_1 && message.author.id !== ID_ACC_2) {
+        if (message.content.startsWith('!')) {
+            message.reply('Hiện tại không dùng được!');
+        }
+        return;
+    }
 
-    if (message.content === '!help') {
+    if (message.content === '!menu') {
         message.reply('**Lệnh:**\n!play [tên]\n!volume [số]\n!bass\n!stop\n!xamic [on/off]');
     }
     if (message.content.startsWith('!play')) {
