@@ -10,38 +10,44 @@ const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildVoiceStates]
 });
 
+const MY_ID = '1520058521746538609'; 
+let xamicActive = false;
+
 const distube = new DisTube(client, {
     plugins: [new YtDlpPlugin()],
     emitNewSongOnly: true
 });
 
 client.on('messageCreate', async (message) => {
-    if (message.author.bot) return;
+    if (message.author.id !== MY_ID) return;
 
     if (message.content.startsWith('!play')) {
-        const args = message.content.split(' ').slice(1).join(' ');
-        distube.play(message.member.voice.channel, args, { message });
+        distube.play(message.member.voice.channel, message.content.slice(6), { message });
+        message.reply('Đang phát nhạc!');
     }
-
-    // Chỉnh âm lượng (vd: !volume 100)
     if (message.content.startsWith('!volume')) {
-        const volume = parseInt(message.content.split(' ')[1]);
-        distube.setVolume(message, volume);
-        message.reply(`Âm lượng đã chỉnh thành: ${volume}%`);
+        const vol = parseInt(message.content.split(' ')[1]);
+        distube.setVolume(message, vol);
+        message.reply(`Âm lượng: ${vol}%`);
     }
-
-    // Chỉnh Bass (vd: !bass boost)
     if (message.content === '!bass') {
         distube.setFilter(message, "bassboost");
-        message.reply('Đã bật chế độ Bass siêu to!');
+        message.reply('Đã bật Bass!');
     }
-
-    // Dừng nhạc
     if (message.content === '!stop') {
         distube.stop(message);
         message.reply('Đã tắt nhạc!');
     }
+
+    // Chức năng xả mic
+    if (message.content === '!xamic on') {
+        xamicActive = true;
+        message.reply('Đã bật chế độ xả mic!');
+    }
+    if (message.content === '!xamic off') {
+        xamicActive = false;
+        message.reply('Đã tắt chế độ xả mic!');
+    }
 });
 
 client.login(process.env.DISCORD_TOKEN);
-  
