@@ -22,12 +22,10 @@ const distube = new DisTube(client, {
 client.on('messageCreate', async (m) => {
     if (m.author.bot) return;
 
-    // 1. Menu
     if (m.content === '!menu') {
-        return m.reply('📜 **MENU ĐIỀU KHIỂN:**\n!bật nhạc [link]\n!xả mic (Bảng chọn)\n!tắt nhạc\n!cút (Đuổi bot)');
+        return m.reply('📜 **MENU ĐIỀU KHIỂN:**\n!bật nhạc [link]\n!xả mic\n!tắt nhạc\n!cút');
     }
 
-    // 2. Bảng Xả Mic
     if (m.content === '!xả mic') {
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('URL_1').setLabel('Còi CS').setStyle(ButtonStyle.Primary),
@@ -37,32 +35,26 @@ client.on('messageCreate', async (m) => {
         return m.reply({ content: '🎙️ Chọn file:', components: [row] });
     }
 
-    // 3. Bật nhạc
     if (m.content.startsWith('!bật nhạc ')) {
         const q = m.content.slice(10);
         if (!m.member.voice.channel) return m.reply('❌ Vào Voice trước!');
         distube.play(m.member.voice.channel, q, { message: m });
     }
 
-    // 4. Tắt nhạc
     if (m.content === '!tắt nhạc') {
         distube.stop(m);
         return m.reply('⏹️ Đã tắt nhạc.');
     }
 
-    // 5. Cút (Đuổi bot)
     if (m.content === '!cút') {
-        const queue = distube.getQueue(m);
-        if (queue) queue.stop();
-        m.member.voice.channel.leave(); // Nếu dùng bản cũ hoặc lib voice hỗ trợ
-        // Hoặc đơn giản là dừng bot:
-        distube.voices.leave(m);
+        distube.voices.leave(m); // Cách chuẩn để bot rời voice
         return m.reply('👋 Bot cút đây!');
     }
 });
 
 client.on('interactionCreate', async (i) => {
     if (!i.isButton()) return;
+    if (!i.member.voice.channel) return i.reply({ content: '❌ Vào Voice trước!', ephemeral: true });
     distube.play(i.member.voice.channel, i.customId, { textChannel: i.channel });
     i.reply({ content: '🔊 Đang xả...', ephemeral: true });
 });
