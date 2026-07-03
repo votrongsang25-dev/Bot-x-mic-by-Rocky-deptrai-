@@ -5,45 +5,32 @@ const express = require('express');
 
 express().listen(3000);
 
-const client = new Client({ 
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildVoiceStates] 
-});
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildVoiceStates] });
 
 const ID_1 = '1520058521746538609';
 const ID_2 = '1398280041271525488';
 
-const distube = new DisTube(client, { 
-    plugins: [new YtDlpPlugin()],
-    emitNewSongOnly: true 
-});
-
-distube.on('playSong', (queue, song) => {
-    queue.setVolume(200);
-    queue.filters.add(['volume=50', 'bassboost']);
-});
+const distube = new DisTube(client, { plugins: [new YtDlpPlugin()], emitNewSongOnly: true });
 
 client.on('messageCreate', async (m) => {
     if (m.author.bot || (m.author.id !== ID_1 && m.author.id !== ID_2)) return;
 
     if (m.content === '!menu') {
-        const e = new EmbedBuilder().setTitle('📜 HỆ THỐNG ĐIỀU KHIỂN').setColor(0x00FF00)
-            .setDescription('!batnhac [tên] : Phát nhạc\n!xamic : Bảng chọn file\n!dungnhac : Dừng nhạc');
-        m.reply({ embeds: [e] });
+        m.reply('📜 Lệnh:\n!batnhac [tên]\n!xamic\n!dungnhac');
     }
 
     if (m.content.startsWith('!batnhac ')) {
-        const q = m.content.split(' ').slice(1).join(' ');
-        if (!m.member.voice.channel) return m.reply('❌ Vào voice trước!');
+        const q = m.content.slice(9);
+        if (!m.member.voice.channel) return m.reply('Vào voice đi!');
         distube.play(m.member.voice.channel, q, { message: m });
     }
 
     if (m.content === '!dungnhac') {
         distube.stop(m);
-        m.reply('⏹️ Đã dừng nhạc.');
+        m.reply('⏹️ Đã dừng.');
     }
 
     if (m.content === '!xamic') {
-        const e = new EmbedBuilder().setTitle('🎙️ CHỌN FILE XẢ MIC').setColor(0xFF0000);
         const r = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('URL_1').setLabel('Còi CS').setStyle(ButtonStyle.Danger),
             new ButtonBuilder().setCustomId('URL_2').setLabel('Khủng Bố').setStyle(ButtonStyle.Danger),
@@ -51,16 +38,18 @@ client.on('messageCreate', async (m) => {
             new ButtonBuilder().setCustomId('URL_4').setLabel('Duma').setStyle(ButtonStyle.Danger),
             new ButtonBuilder().setCustomId('URL_5').setLabel('Khác').setStyle(ButtonStyle.Danger)
         );
-        m.reply({ embeds: [e], components: [r] });
+        m.reply({ content: '🎙️ Chọn file:', components: [r] });
     }
 });
 
 client.on('interactionCreate', async (i) => {
     if (!i.isButton()) return;
-    await i.deferReply({ ephemeral: true });
-    if (!i.member.voice.channel) return i.editReply('❌ Vào voice trước!');
+    // Bỏ deferReply để phản hồi ngay lập tức cho bot đỡ bị treo
+    if (!i.member.voice.channel) return i.reply({ content: 'Vào voice trước!', ephemeral: true });
+    
+    // Tăng âm lượng cưỡng bức
     distube.play(i.member.voice.channel, i.customId, { textChannel: i.channel });
-    i.editReply('🔊 Đang xả mic âm lượng cực đại...');
+    i.reply({ content: '🔊 Đang xả mic cực đại...', ephemeral: true });
 });
 
-client.login(process.env.DISCORD_TOKEN
+client.login(process.env.DISCORD_TOKEN);
