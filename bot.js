@@ -5,29 +5,39 @@ const express = require('express');
 
 express().listen(3000);
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildVoiceStates] });
-
-const distube = new DisTube(client, { 
-    plugins: [new YtDlpPlugin()],
-    leaveOnEmpty: false,
-    leaveOnStop: false,
-    leaveOnFinish: false 
+const client = new Client({ 
+    intents: [
+        GatewayIntentBits.Guilds, 
+        GatewayIntentBits.GuildMessages, 
+        GatewayIntentBits.MessageContent, 
+        GatewayIntentBits.GuildVoiceStates
+    ] 
 });
 
-// Sự kiện playSong: Mặc định bật âm lượng to
+const distube = new DisTube(client, { 
+    plugins: [new YtDlpPlugin()]
+});
+
+// Fix lỗi: Đưa các cài đặt ở lại voice vào đây
+distube.on('initQueue', (queue) => {
+    queue.leaveOnEmpty = false;
+    queue.leaveOnStop = false;
+    queue.leaveOnFinish = false;
+});
+
+// Sự kiện playSong: Bật âm lượng to
 distube.on('playSong', (queue, song) => {
     queue.setVolume(200);
-    queue.filters.add(['volume=50', 'bassboost']);
 });
 
 client.on('messageCreate', async (m) => {
     if (m.author.bot) return;
 
-    // Lệnh phát nhạc thông thường (Tắt loop)
+    // Lệnh phát nhạc thông thường
     if (m.content.startsWith('!batnhac ')) {
         const q = m.content.slice(9);
         if (!m.member.voice.channel) return m.reply('❌ Vào voice trước!');
-        distube.setRepeatMode(m, 0); // Tắt loop
+        distube.setRepeatMode(m, 0); 
         distube.play(m.member.voice.channel, q, { message: m });
     }
 
@@ -48,13 +58,11 @@ client.on('interactionCreate', async (i) => {
     if (!i.isButton()) return;
     if (!i.member.voice.channel) return i.reply({ content: '❌ Vào voice trước!', ephemeral: true });
 
-    // Phát file và BẬT LOOP cho xả mic
     distube.play(i.member.voice.channel, i.customId, { textChannel: i.channel });
     
-    // Đợi 1 chút để queue khởi tạo rồi bật loop
     setTimeout(() => {
         const queue = distube.getQueue(i);
-        if (queue) queue.setRepeatMode(1); // Chỉ bật loop cho file xả mic
+        if (queue) queue.setRepeatMode(1); 
     }, 1000);
 
     i.reply({ content: '🔊 Đang xả mic & đã bật Loop...', ephemeral: true });
