@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { DisTube } = require('distube');
 const { YtDlpPlugin } = require('@distube/yt-dlp');
 const express = require('express');
@@ -10,43 +10,34 @@ const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildVoiceStates]
 });
 
-const ID_ACC_1 = '1520058521746538609';
-const ID_ACC_2 = '1398280041271525488';
+const ID_1 = '1520058521746538609';
+const ID_2 = '1398280041271525488';
 
-const distube = new DisTube(client, {
-    plugins: [new YtDlpPlugin()],
-    emitNewSongOnly: true
-});
+const distube = new DisTube(client, { plugins: [new YtDlpPlugin()], emitNewSongOnly: true });
 
 client.on('messageCreate', async (message) => {
-    if (message.author.id !== ID_ACC_1 && message.author.id !== ID_ACC_2) {
-        if (message.content.startsWith('!')) {
-            message.reply('Hiện tại không dùng được!');
-        }
-        return;
-    }
+    if (message.author.id !== ID_1 && message.author.id !== ID_2) return;
 
     if (message.content === '!menu') {
-        message.reply('**Lệnh:**\n!play [tên]\n!volume [số]\n!bass\n!stop\n!xamic [on/off]');
+        const embed = new EmbedBuilder()
+            .setTitle('═══ ĐIỀU KHIỂN ═══')
+            .setColor(0xFF0000)
+            .setDescription('```fix\nCHỌN LỆNH BÊN DƯỚI\n```');
+
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('bass').setLabel('BẬT BASS').setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('stop').setLabel('DỪNG NHẠC').setStyle(ButtonStyle.Danger)
+        );
+
+        message.reply({ embeds: [embed], components: [row] });
     }
-    if (message.content.startsWith('!play')) {
-        distube.play(message.member.voice.channel, message.content.slice(6), { message });
-        message.reply('Đang phát!');
-    }
-    if (message.content.startsWith('!volume')) {
-        distube.setVolume(message, parseInt(message.content.split(' ')[1]));
-        message.reply('Đã chỉnh volume!');
-    }
-    if (message.content === '!bass') {
-        distube.setFilter(message, "bassboost");
-        message.reply('Đã bật Bass!');
-    }
-    if (message.content === '!stop') {
-        distube.stop(message);
-        message.reply('Đã tắt nhạc!');
-    }
-    if (message.content === '!xamic on') message.reply('Xả mic: BẬT');
-    if (message.content === '!xamic off') message.reply('Xả mic: TẮT');
 });
 
-client.login(process.env.DISCORD_TOKEN);
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isButton()) return;
+    if (interaction.customId === 'bass') {
+        distube.setFilter(interaction, "bassboost");
+        await interaction.reply({ content: '
+http://googleusercontent.com/immersive_entry_chip/0
+http://googleusercontent.com/immersive_entry_chip/1
+        
