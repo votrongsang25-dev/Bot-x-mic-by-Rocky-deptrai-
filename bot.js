@@ -10,8 +10,9 @@ const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildVoiceStates]
 });
 
-const MY_ID = '1520058521746538609'; 
-let xamicActive = false;
+// Chia ra 2 phần ID rõ ràng
+const ID_ACC_1 = '1398280041271525488';
+const ID_ACC_2 = '1520058521746538609';
 
 const distube = new DisTube(client, {
     plugins: [new YtDlpPlugin()],
@@ -19,16 +20,19 @@ const distube = new DisTube(client, {
 });
 
 client.on('messageCreate', async (message) => {
-    if (message.author.id !== MY_ID) return;
+    // Chỉ cho phép ID 1 HOẶC ID 2 dùng lệnh
+    if (message.author.id !== ID_ACC_1 && message.author.id !== ID_ACC_2) return;
 
+    if (message.content === '!help') {
+        message.reply('**Lệnh:**\n!play [tên]\n!volume [số]\n!bass\n!stop\n!xamic [on/off]');
+    }
     if (message.content.startsWith('!play')) {
         distube.play(message.member.voice.channel, message.content.slice(6), { message });
-        message.reply('Đang phát nhạc!');
+        message.reply('Đang phát!');
     }
     if (message.content.startsWith('!volume')) {
-        const vol = parseInt(message.content.split(' ')[1]);
-        distube.setVolume(message, vol);
-        message.reply(`Âm lượng: ${vol}%`);
+        distube.setVolume(message, parseInt(message.content.split(' ')[1]));
+        message.reply('Đã chỉnh volume!');
     }
     if (message.content === '!bass') {
         distube.setFilter(message, "bassboost");
@@ -38,16 +42,8 @@ client.on('messageCreate', async (message) => {
         distube.stop(message);
         message.reply('Đã tắt nhạc!');
     }
-
-    // Chức năng xả mic
-    if (message.content === '!xamic on') {
-        xamicActive = true;
-        message.reply('Đã bật chế độ xả mic!');
-    }
-    if (message.content === '!xamic off') {
-        xamicActive = false;
-        message.reply('Đã tắt chế độ xả mic!');
-    }
+    if (message.content === '!xamic on') message.reply('Xả mic: BẬT');
+    if (message.content === '!xamic off') message.reply('Xả mic: TẮT');
 });
 
 client.login(process.env.DISCORD_TOKEN);
