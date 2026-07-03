@@ -5,6 +5,7 @@ const express = require('express');
 
 express().listen(3000);
 
+// Fix lỗi: Đảm bảo có đủ Intent để đọc tin nhắn và voice state
 const client = new Client({ 
     intents: [
         GatewayIntentBits.Guilds, 
@@ -15,40 +16,46 @@ const client = new Client({
 });
 
 const distube = new DisTube(client, { 
-    plugins: [new YtDlpPlugin()]
+    plugins: [new YtDlpPlugin()],
+    emitNewSongOnly: true
 });
 
-// Fix lỗi: Đưa các cài đặt ở lại voice vào đây
 distube.on('initQueue', (queue) => {
     queue.leaveOnEmpty = false;
     queue.leaveOnStop = false;
     queue.leaveOnFinish = false;
 });
 
-// Sự kiện playSong: Bật âm lượng to
-distube.on('playSong', (queue, song) => {
-    queue.setVolume(200);
+client.once('ready', () => {
+    console.log('Bot đã sẵn sàng và đang lắng nghe!');
 });
 
 client.on('messageCreate', async (m) => {
     if (m.author.bot) return;
 
-    // Lệnh phát nhạc thông thường
+    // Lệnh phát nhạc
     if (m.content.startsWith('!batnhac ')) {
-        const q = m.content.slice(9);
+        const q = m.content.split(' ').slice(1).join(' ');
         if (!m.member.voice.channel) return m.reply('❌ Vào voice trước!');
-        distube.setRepeatMode(m, 0); 
         distube.play(m.member.voice.channel, q, { message: m });
     }
 
-    // Lệnh gọi bảng xả mic
-    if (m.content === '!xamic') {
+    // Lệnh menu (xả mic)
+    if (m.content === '!xamic' || m.content === '!menu') {
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('URL_1').setLabel('Còi CS').setStyle(ButtonStyle.Primary),
             new ButtonBuilder().setCustomId('URL_2').setLabel('Chửi Khủng Bố').setStyle(ButtonStyle.Danger),
             new ButtonBuilder().setCustomId('URL_3').setLabel('Tung Tung').setStyle(ButtonStyle.Primary)
         );
-        m.reply({ content: '🎙️ Chọn file (Tự động lặp):', components: [row] });
+        m.reply({ content: '🎙️ Chọn file để xả mic:', components: [row] });
+    }
+
+    // Lệnh volume
+    if (m.content.startsWith('!volume ')) {
+        const vol = parseInt(m.content.split(' ')[1]);
+        if (isNaN(vol)) return m.reply('❌ Nhập số từ 0-200!');
+        distube.setVolume(m, vol);
+        m.reply(`🔊 Đã chỉnh âm lượng lên: ${vol}%`);
     }
 
     if (m.content === '!dungnhac') distube.stop(m);
@@ -60,10 +67,11 @@ client.on('interactionCreate', async (i) => {
 
     distube.play(i.member.voice.channel, i.customId, { textChannel: i.channel });
     
+    // Auto loop cho nút bấm
     setTimeout(() => {
         const queue = distube.getQueue(i);
-        if (queue) queue.setRepeatMode(1); 
-    }, 1000);
+        if (queue) queue.setRepeatMode(1);
+    }, 2000);
 
     i.reply({ content: '🔊 Đang xả mic & đã bật Loop...', ephemeral: true });
 });
